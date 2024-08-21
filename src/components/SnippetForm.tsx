@@ -1,55 +1,45 @@
-import { useState } from "react";
-import { toast } from "react-hot-toast";
-import { desktopDir, join } from "@tauri-apps/api/path";
 import { writeTextFile } from "@tauri-apps/api/fs";
+import { desktopDir, join } from "@tauri-apps/api/path";
+import { useEffect, useState } from "react";
 import { useSnippetStore } from "../store/snippetsStore";
+import { toastError, toastSucces } from "../toast/toast";
+import { loadFiles } from "../services/snippets.service";
 
 function SnippetForm() {
   const [snippetName, setSnippetName] = useState<string>("");
-  const addSnippetName = useSnippetStore((state) => state.addSnippetName);
-  const snippetNames = useSnippetStore((state) => state.snippetsNames);
+  const { addSnippetName, allSnipets } = useSnippetStore((state) => state);
+
+  useEffect(() => {
+    loadFiles();
+  }, [snippetName]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!snippetName || snippetName === "") {
-      // alert("Please write a snippet name");
-      toast.error("Please write a snippet name", {
-        duration: 2000,
-        position: "bottom-right",
-        style: {
-          background: "#202020",
-          color: "#fff",
-        },
-      });
+      toastError("Please write a snippet name");
       return;
     }
 
     // file already exists
-    if (snippetNames.includes(snippetName)) {
-      toast.error("Snippet already exists", {
-        duration: 2000,
-        position: "bottom-right",
-        style: {
-          background: "#202020",
-          color: "#fff",
-        },
-      });
+    const alreadyExist = allSnipets.every(
+      (snippet) => snippet.name === snippetName
+    );
+    console.log(allSnipets, alreadyExist);
+    if (snippetName && alreadyExist) {
+      toastError("Snippet already exists");
       return;
     }
 
     const desktopPath = await desktopDir();
-    writeTextFile(`${desktopPath}/taurifiles/${snippetName}.json`, "");
-    addSnippetName(snippetName);
+    const filePath = await join(desktopPath, "taurifiles", `${snippetName}`);
+    writeTextFile(filePath, "");
+    const newSnippet = {
+      name: snippetName,
+      path: filePath,
+    };
+    addSnippetName(newSnippet);
     setSnippetName("");
-
-    toast.success("Snippet saved", {
-      duration: 2000,
-      position: "bottom-right",
-      style: {
-        background: "#202020",
-        color: "#fff",
-      },
-    });
+    toastSucces("Snippet saved");
   };
   return (
     <form onSubmit={onSubmit}>
@@ -61,7 +51,6 @@ function SnippetForm() {
         autoFocus
         value={snippetName}
       />
-      <button className="hidden">save</button>
     </form>
   );
 }

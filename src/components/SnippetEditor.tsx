@@ -18,7 +18,7 @@ function SnippetEditor() {
       console.log(`Guardando texto: ${text}`);
       const desktopPath = await desktopDir();
       await writeTextFile(
-        `${desktopPath}/taurifiles/${selectedSnippet.name}.json`,
+        `${desktopPath}/taurifiles/${selectedSnippet.name}`,
         text ?? ""
       );
     }, 1000); // Esperar 1 segundo después de la última escritura

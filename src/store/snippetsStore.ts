@@ -1,31 +1,32 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
-interface Snippet {
+export interface Snippet {
   name: string;
-  code: string | null;
+  code?: string | null;
+  path: string;
 }
 
 interface SnippetState {
-  snippetsNames: string[];
   selectedSnippet: Snippet | null;
-  addSnippetName: (name: string) => void;
-  setSnippetsNames: (names: string[]) => void;
+  allSnipets: Snippet[];
+  addSnippetName: (snippet: Snippet) => void;
   removeSnippetName: (name: string) => void;
   setSelectedSnippet: (snippet: Snippet | null) => void;
+  setAllSnippets: (snippets: Snippet[]) => void;
 }
 
 export const useSnippetStore = create<SnippetState>()(
   devtools((set) => ({
-    snippetsNames: [],
     selectedSnippet: null,
-    addSnippetName: (name) =>
-      set((state) => ({ snippetsNames: [...state.snippetsNames, name] })),
-    setSnippetsNames: (names) => set({ snippetsNames: names }),
+    allSnipets: [],
+    addSnippetName: (snippet) =>
+      set((state) => ({ allSnipets: [...state.allSnipets, snippet] })),   
     removeSnippetName: (name) =>
       set((state) => ({
-        snippetsNames: state.snippetsNames.filter((n) => n !== name),
+        allSnipets: state.allSnipets.filter((n) => n.name !== name),
       })),
     setSelectedSnippet: (snippet) => set({ selectedSnippet: snippet }),
+    setAllSnippets: (snippets) => set({allSnipets: snippets})
   }))
 );

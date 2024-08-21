@@ -1,27 +1,22 @@
 import { useEffect } from "react";
-import { desktopDir } from "@tauri-apps/api/path";
-import { readDir } from "@tauri-apps/api/fs";
+import { loadFiles } from "../services/snippets.service";
 import { useSnippetStore } from "../store/snippetsStore";
 import SnippetItem from "./SnippetItem";
 
 function SnippetList() {
-  const setSnippetNames = useSnippetStore((state) => state.setSnippetsNames);
-  const snippetNames = useSnippetStore((state) => state.snippetsNames);
+  const { setAllSnippets, allSnipets } = useSnippetStore((state) => state);
+  const result = loadFiles();
 
   useEffect(() => {
-    async function loadFiles() {
-      const desktopPath = await desktopDir();
-      const result = await readDir(`${desktopPath}/taurifiles`);
-      const filenames = result.map((file) => file.name!.split(".")[0]);
-      setSnippetNames(filenames);
-    }
-    loadFiles();
+    result.then((values) => {
+      setAllSnippets(values);
+    });
   }, []);
 
   return (
     <ul>
-      {snippetNames.map((file, i) => (
-        <SnippetItem key={i} file={file} />
+      {allSnipets.map((file) => (
+        <SnippetItem key={file.path} file={file.name} />
       ))}
     </ul>
   );

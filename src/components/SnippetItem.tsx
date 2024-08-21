@@ -1,65 +1,56 @@
-import { FiTrash, FiX } from "react-icons/fi";
-import { toast } from "react-hot-toast";
-import { useSnippetStore } from "../store/snippetsStore";
+import { readTextFile, removeFile } from "@tauri-apps/api/fs";
 import { desktopDir, join } from "@tauri-apps/api/path";
-import { removeFile, readTextFile } from "@tauri-apps/api/fs";
+import { FiTrash, FiX } from "react-icons/fi";
 import { twMerge } from "tailwind-merge";
+import { useSnippetStore } from "../store/snippetsStore";
+import { toastSucces } from "../toast/toast";
 
 type SnippetItemProps = {
   file: string;
 };
 
 function SnippetItem({ file }: SnippetItemProps) {
-  const removeSnippetName = useSnippetStore((state) => state.removeSnippetName);
-  const setSelectSnippet = useSnippetStore((state) => state.setSelectedSnippet);
-  const selectedSnippetName = useSnippetStore((state) => state.selectedSnippet);
-  console.log(selectedSnippetName);
+  const { removeSnippetName, setSelectedSnippet, selectedSnippet } =
+    useSnippetStore((state) => state);
+  console.log(selectedSnippet);
 
   const handleDelete = async (file: string) => {
     const accept = await window.confirm(
       "Are you sure you want to delete this snippet?"
     );
     if (!accept) return;
-
     const desktopPath = await desktopDir();
-    const filePath = await join(desktopPath, "taurifiles", `${file}.json`);
+    const filePath = await join(desktopPath, "taurifiles", `${file}`);
     await removeFile(filePath);
-
     removeSnippetName(file);
-
-    toast.success("Snippet deleted", {
-      duration: 2000,
-      position: "bottom-right",
-      style: {
-        background: "#202020",
-        color: "#fff",
-      },
-    });
+    toastSucces("Snippet deleted");
   };
 
+  const handleSelect = async (file: string) => {
+    setSelectedSnippet(null);
+    const desktopPath = await desktopDir();
+    const filePath = await join(desktopPath, "taurifiles", `${file}`);
+    const snippet = await readTextFile(filePath);
+    setSelectedSnippet({
+      name: file,
+      code: snippet,
+      path: filePath,
+    });
+  };
   return (
     <li
       className={twMerge(
         "task py-2 px-4 hover:bg-neutral-900 hover:cursor-pointer flex justify-between",
-        selectedSnippetName?.name === file ? "bg-sky-500" : ""
+        selectedSnippet?.name === file ? "bg-sky-500" : ""
       )}
-      onClick={async () => {
-
-        setSelectSnippet(null);
-
-        const desktopPath = await desktopDir();
-        const filePath = await join(desktopPath, "taurifiles", `${file}.json`);
-        const snippet = await readTextFile(filePath);
-        console.log(snippet)
-        setSelectSnippet({
-          name: file,
-          code: snippet,
-        });
+      onClick={(e) => {
+        e.stopPropagation();
+        handleSelect(file);
       }}
     >
       {file}
 
-      {setSelectSnippet && (
+      {selectedSnippet?.name === file && (
         <div className={"flex gap-2 items-center justify-center"}>
           <FiTrash
             className="text-neutral-500"
@@ -72,7 +63,7 @@ function SnippetItem({ file }: SnippetItemProps) {
             className="text-neutral-500 text-xl"
             onClick={(e) => {
               e.stopPropagation();
-              setSelectSnippet(null);
+              setSelectedSnippet(null);
             }}
           />
         </div>
